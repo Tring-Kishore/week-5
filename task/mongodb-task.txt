@@ -1,0 +1,105 @@
+function createAccount(p_account, p_name, p_balance) {
+if (p_account.length !== 15) {
+throw "Account number should be 15 characters long.";
+}
+if (p_balance <= 0) {
+throw "Initial balance must be greater than 0.";
+}
+db.Accounts.insertOne({
+account_num: p_account,
+account_holder_name: p_name,
+balance: p_balance,
+created_time: new Date()
+});
+
+print("Account created successfully.");
+}
+
+function withdrawAmount(p_account, p_amount) {
+const account = db.Accounts.findOne({ account_num: p_account });
+if (!account) {
+throw `Account ${p_account} not found.`;
+}
+
+if (account.balance < p_amount) {
+throw "Insufficient balance.";
+}
+
+db.Accounts.updateOne(
+{ account_num: p_account },
+{ $inc: { balance: -p_amount } }
+);
+
+db.Transactions.insertOne({
+account_num: p_account,
+transaction_type: "withdraw",
+amount: p_amount,
+transaction_date: new Date()
+});
+
+print("Withdrawal successful.");
+}
+
+function depositAmount(p_account, p_amount) {
+const account = db.Accounts.findOne({ account_num: p_account });
+if (!account) {
+throw `Account ${p_account} not found.`;
+}
+
+if (p_amount <= 0) {
+throw "Deposit amount must be greater than 0.";
+}
+
+db.Accounts.updateOne(
+{ account_num: p_account },
+{ $inc: { balance: p_amount } }
+);
+
+db.Transactions.insertOne({
+account_num: p_account,
+transaction_type: "deposit",
+amount: p_amount,
+transaction_date: new Date()
+});
+
+print("Deposit successful.");
+}
+
+function transferAmount(p_from_account_num, p_to_account_num, p_amount) {
+const fromAccount = db.Accounts.findOne({ account_num: p_from_account_num });
+const toAccount = db.Accounts.findOne({ account_num: p_to_account_num });
+
+if (!fromAccount) {
+throw `Sender account ${p_from_account_num} not found.`;
+}
+if (!toAccount) {
+throw `Recipient account ${p_to_account_num} not found.`;
+}
+
+if (p_amount <= 0) {
+throw "Transfer amount must be greater than 0.";
+}
+
+if (fromAccount.balance < p_amount) {
+throw "Insufficient balance in sender's account.";
+}
+
+db.Accounts.updateOne(
+{ account_num: p_from_account_num },
+{ $inc: { balance: -p_amount } }
+);
+db.Accounts.updateOne(
+{ account_num: p_to_account_num },
+{ $inc: { balance: p_amount } }
+);
+
+db.Transfers.insertOne({
+from_account_num: p_from_account_num,
+to_account_num: p_to_account_num,
+amount: p_amount,
+transfer_date: new Date(),
+status: "completed"
+});
+
+print("Transfer successful.");
+}
