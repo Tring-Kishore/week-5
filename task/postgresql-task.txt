@@ -1,4 +1,4 @@
-table accounts
+--table accounts
 
 CREATE TABLE Accounts(
 account_id SERIAL PRIMARY KEY,
@@ -8,7 +8,7 @@ balance DECIMAL(15,2) DEFAULT 0.00,
 crated_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-table transacions
+--table transacions
 
 CREATE TABLE Transactions(
 transaction_id SERIAL PRIMARY KEY,
@@ -22,7 +22,7 @@ FOREIGN KEY (account_num) REFERENCES Accounts(account_num) ON DELETE CASCADE
 
 DROP TABLE Transactions;
 
-table transfer
+--table transfer
 
 CREATE TABLE transfer(
 transfer_id SERIAL PRIMARY KEY ,
@@ -40,7 +40,7 @@ INSERT INTO Accounts(account_num , account_holder_name , balance) VALUES ('03580
 
 SELECT * FROM Accounts;
 
-function to create account
+--function to create account
 
 CREATE OR REPLACE FUNCTION create_account(p_account VARCHAR(15),p_name VARCHAR(50),p_balance DECIMAL(15,2))
 RETURNS VOID AS $$
@@ -57,7 +57,7 @@ $$ LANGUAGE plpgsql;
 
 SELECT create_account('121212121212121','Dinesh',3000.00);
 
-function for withdraw
+--function for withdraw
 
 CREATE OR REPLACE FUNCTION withdraw_amount(p_account VARCHAR(15),p_amount DECIMAL(15,2))
 RETURNS VOID AS $$
@@ -76,7 +76,7 @@ INSERT INTO Transactions (account_num,transaction_type,amount) VALUES (p_account
 END;
 $$ LANGUAGE plpgsql;
 
-function for deposit
+--function for deposit
 
 CREATE OR REPLACE FUNCTION deposit_amount (p_account VARCHAR(15),p_amount DECIMAL(15,2))
 RETURNS VOID AS $$
@@ -101,7 +101,7 @@ SELECT * FROM Transactions;
 SELECT debit_amount('035801000048179',200.00);
 SELECT deposit_amount('035801000048179',100);
 
-function for transfer
+--function for transfer
 
 CREATE OR REPLACE FUNCTION transfer_amount(p_from_account_num VARCHAR(15),p_to_account_num VARCHAR(15),p_amount DECIMAL(15,2))
 RETURNS VOID AS $$
@@ -111,7 +111,6 @@ v_balance DECIMAL(15,2);
 BEGIN
 SELECT balance INTO v_balance FROM Accounts WHERE account_num = p_from_account_num;
 
-```
 IF NOT FOUND THEN
 	RAISE EXCEPTION 'Sender Account % Not found',p_from_account_num;
 END IF;
@@ -130,7 +129,6 @@ UPDATE Accounts SET balance = balance - p_amount WHERE account_num = p_from_acco
 UPDATE Accounts SET balance = balance + p_amount WHERE account_num = p_to_account_num;
 INSERT INTO Transfer(from_account_num,to_account_num,amount,status) VALUES (p_from_account_num,p_to_account_num,p_amount,'completed');
 
-```
 
 END;
 $$ LANGUAGE plpgsql;
@@ -138,3 +136,20 @@ $$ LANGUAGE plpgsql;
 SELECT transfer_amount('035801000048179','121212121212121',200)
 
 SELECT * FROM Accounts;
+
+--checkbalance function
+
+CREATE OR REPLACE FUNCTION check_balance(p_account VARCHAR(15))
+RETURNS DECIMAL(15,2) AS $$
+DECLARE
+v_balance DECIMAL(15,2);
+BEGIN
+	SELECT balance INTO v_balance FROM Accounts WHERE account_num = p_account;
+	IF NOT FOUND THEN
+		RAISE EXCEPTION 'Account % not found',p_account;
+	END IF;
+	RETURN v_balance;
+END
+$$ LANGUAGE plpgsql;
+
+SELECT check_balance('035801000048179');
